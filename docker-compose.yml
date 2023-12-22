@@ -1,0 +1,79 @@
+version: '3'
+services:
+  eureka-server:
+    image: eureka-server-image
+    build:
+      context: ./eureka_server  # Replace with the actual path to your eureka-server project
+    ports:
+      - "8761:8761"
+    networks:
+      - spring-cloud-network
+
+  client-app:
+    image: client-app-image
+    build:
+      context: ./client  # Replace with the actual path to your client project
+    ports:
+      - "8090:8090"
+    networks:
+      - spring-cloud-network
+    depends_on:
+      - eureka-server
+      - mysql-client
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-client:3307/client-ms-ace?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: P@$$w0rd
+
+  gateway-app:
+    image: gateway-app-image
+    build:
+      context: ./gateway  # Replace with the actual path to your gateway project
+    ports:
+      - "8888:8888"
+    networks:
+      - spring-cloud-network
+    depends_on:
+      - eureka-server
+
+  voiture-app:
+    image: voiture-app-image
+    build:
+      context: ./voiture  # Replace with the actual path to your voiture project
+    ports:
+      - "8089:8089"
+    networks:
+      - spring-cloud-network
+    depends_on:
+      - eureka-server
+      - client-app
+      - gateway-app
+      - mysql-voiture
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-voiture:3306/voiture-ms-ace?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: P@$$w0rd
+
+  mysql-client:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: P@$$w0rd
+      MYSQL_DATABASE: client-ms-ace
+    ports:
+      - "3307:3306"
+    networks:
+      - spring-cloud-network
+
+  mysql-voiture:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: P@$$w0rd
+      MYSQL_DATABASE: voiture-ms-ace
+    ports:
+      - "3306:3306"
+    networks:
+      - spring-cloud-network
+
+networks:
+  spring-cloud-network:
+    driver: bridge
